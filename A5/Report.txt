@@ -1,0 +1,53 @@
+Cleaning the data
+	The data was cleaned using SQL. The csv were imported into postgres as seperate tables. The posts table was then pruned for any record that didn't have userid, postid or parentid as an integer.
+	
+	The following query was then run on and stored as a csv to be used to make the baskets.
+	
+	WITH cte_filtered_tags AS (
+		SELECT pt.postid, tag
+		FROM posttags pt
+		INNER JOIN languages l ON pt.tag=l.language
+	),
+	cte_single_lang_posts AS (
+		SELECT postid, min(tag) tag
+		FROM cte_filtered_tags
+		GROUP BY postid
+		HAVING COUNT(tag) < 2
+	),
+	cte_single_lang_users_child AS (
+		SELECT p.userid, tag, count(tag) tag_count
+		FROM ogposts p
+		INNER JOIN users u ON p.userid=u.userid
+		INNER JOIN cte_single_lang_posts slp ON 
+			p.postid=slp.postid
+		GROUP BY p.userid, tag
+		HAVING COUNT(tag) > 1
+	),
+	cte_single_lang_users_parent AS (
+		SELECT p.userid, tag, count(tag) tag_count
+		FROM ogposts p
+		INNER JOIN users u ON p.userid=u.userid
+		INNER JOIN cte_single_lang_posts slp ON 
+			p.parentid=slp.postid::text
+		GROUP BY p.userid, tag
+		HAVING COUNT(tag) > 1
+	)
+
+	SELECT userid, array_agg(tag ORDER BY tag) tags FROM (
+		SELECT userid, tag 
+		FROM cte_single_lang_users_child
+		UNION
+		SELECT userid, tag
+		FROM cte_single_lang_users_parent
+	) f
+	GROUP BY userid
+	HAVING array_length(array_agg(tag), 1) > 1
+	ORDER BY userid::integer;
+	
+
+Part 1
+	The process used in part one was a simple transformation of a csv into a txt file. This was done in scala using spark. The csv was imported using a spark context, the header was dropped and input was split twice. Once to seperate the id from the languages and the once more to seperate the languages into an array. Then all unnecessary chars were removed from the strings and the parts were reassebled into the required format and saved to "baskets.txt".
+
+
+Part 3
+	The process for this part is similar to part 1. The input file was baskets.txt made in part1 and loaded into scala using a spark context. Next languages.csv was imported into memory as a Map with the keys being the languages and the values being the respective ids. The output was created by iterating over the baskets.txt file, seperating the langauges from the index, fetching the id for each langauge from the map, and then making a string for each user. The output was then stored into a file named "documents.txt".

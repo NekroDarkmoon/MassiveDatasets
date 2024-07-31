@@ -1,0 +1,32 @@
+* use this languages.csv file
+
+  the languages.csv file contains two mistakes. Please use this one instead
+  languages.csv
+
+
+* sbt to use with spark.
+
+  I have created an sbt file for spark that you has the dependencies for spark.ml
+
+* Sample of the files to create
+
+There are 2 files here with samples of users and their corresponding baskets, for both formats.
+
+  baskets.sample
+  documents.sample
+
+you can create these files using the script   test-sample.sh.
+
+Assuming your files are claled baskets.csv and documents.data, run:
+
+
+#+begin_src sh
+test-sample.sh baskets.csv
+#+end_src
+
+and 
+
+#+begin_src sh
+test-sample.sh documents.data
+#+end_src
+
